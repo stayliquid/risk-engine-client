@@ -1,5 +1,6 @@
 module.exports = {
   apiUrl: "http://localhost:3999",
+  rpcUrl: "https://arb1.arbitrum.io/rpc",
   portfolio: {
     portfolioId: "main-portfolio",
     orgId: "risk-api-client",

@@ -29,7 +29,31 @@ app.post("/webhook-target", async (req, res) => {
     return res.status(405).json({ error: "Only POST allowed" });
   }
   console.log("Received webhook:", req.body);
-  res.status(200).json({ received: req.body, ok: true });
+
+  // Sign and submit the payload
+  try {
+    const { body } = req;
+    console.log({ body });
+    const { event, allocations } = req.body;
+    if (!event || !allocations) {
+      return res.status(400).json({
+        error: "Missing 'event', or 'allocations' in request body",
+      });
+    }
+    if (event !== "rebalance") {
+      return res.status(400).json({ error: "Unsupported event type" });
+    }
+    const result = await executeAll(allocations);
+    if (result.status) {
+      console.log("✅ Payload executed successfully:", result.res);
+      return res.status(200).json({ status: true });
+    }
+    console.error("❌ Failed to execute payload:", result.error);
+    return res.status(500).json({ status: false, error: result.error });
+  } catch (error) {
+    console.error("🔥 Error executing payload:", error.message);
+    return res.status(500).json({ status: false, error: error.message });
+  }
 });
 
 const PORT = process.env.PORT || 3000;

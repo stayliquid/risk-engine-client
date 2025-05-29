@@ -2,7 +2,7 @@ require("dotenv").config();
 const axios = require("axios");
 const ethers = require("ethers");
 const chalk = require("chalk");
-const { apiUrl, portfolio } = require("./config");
+const { apiUrl, portfolio, rpcUrl } = require("./config");
 
 const checkEnvVariables = () => {
   const requiredEnvVars = ["PRIVATE_KEY", "RISK_API_KEY"];
@@ -12,7 +12,7 @@ const checkEnvVariables = () => {
   });
 };
 
-async function retryWithBackoff(fn, retries = 5, delay = 1000, factor = 2) {
+const retryWithBackoff = async (fn, retries = 5, delay = 1000, factor = 2) => {
   let attempt = 0;
   while (attempt < retries) {
     try {
@@ -27,7 +27,7 @@ async function retryWithBackoff(fn, retries = 5, delay = 1000, factor = 2) {
       await new Promise((res) => setTimeout(res, wait));
     }
   }
-}
+};
 
 const loadWallet = async () => {
   try {
@@ -132,6 +132,127 @@ const isPortfolioHealthy = async (apiUrl, portfolio) => {
   }
 };
 
+const submitSignedTx = async (signedTx) => {
+  try {
+    const response = await axios.post(
+      `${apiUrl}/portfolio/submit-signed-transaction`,
+      { signedTx },
+      {
+        headers: { Authorization: process.env.RISK_API_KEY },
+      }
+    );
+    return response.data;
+  } catch (error) {
+    console.error("Error submitting signed transaction:", error);
+    throw error;
+  }
+};
+
+const executePayload = async (chainId, to, data, value) => {
+  try {
+    const wallet = await loadWallet();
+    const provider = new ethers.JsonRpcProvider(rpcUrl);
+
+    // Estimate gas limit
+    const gasLimit = await provider.estimateGas({
+      from: wallet.address,
+      to,
+      data,
+      value,
+    });
+    // Fetch gas fees
+    const feeData = await provider.getFeeData();
+    const { maxFeePerGas, maxPriorityFeePerGas } = feeData;
+
+    const tx = {
+      from: wallet.address,
+      to,
+      data,
+      value,
+      chainId,
+      gasLimit,
+      maxFeePerGas,
+      maxPriorityFeePerGas,
+    };
+    const signedTx = await wallet.signTransaction(tx);
+
+    // Submit the signed transaction
+    const result = await submitSignedTx(signedTx);
+    return result;
+  } catch (error) {
+    console.error("Error executing payload:", error);
+    throw error;
+  }
+};
+
+const executeAll = async (allocations) => {
+  //
+  // Execute approve payloads first
+  //
+  const apprExecRes = new Map(); // Map<beefyId, boolean>
+
+  const approvePayloads = allocations.filter(
+    (a) => a.payload.type === "tokenApprove"
+  );
+
+  for await (const approve of approvePayloads) {
+    const { chainId, to, data, value } = approve.payload;
+    const beefyId = approve.beefyId;
+    const txType = approve.payload.type;
+
+    try {
+      const res = await executePayload(chainId, to, data, value);
+      if (!res || !res.status)
+        throw new Error("Execution failed or returned no status:", res);
+
+      apprExecRes.set(beefyId, true);
+
+      console.log(
+        `Approve payload executed successfully for ${beefyId}: ${res}`
+      );
+    } catch (error) {
+      apprExecRes.set(beefyId, false);
+      console.error(`Failed to execute approve payload for ${beefyId}:`, error);
+    }
+  }
+  console.log({ apprExecRes });
+
+  //
+  // After approves are successfully executed, proceed with the pool actions
+  //
+  const poolExecRes = new Map(); // Map<beefyId, boolean>
+  const poolActionPayloads = allocations.filter(
+    (a) => a.payload.type === "poolAction"
+  );
+  for await (const poolAction of poolActionPayloads) {
+    const { chainId, to, data, value } = poolAction.payload;
+    const beefyId = poolAction.beefyId;
+
+    // Check if approve was successful for this beefyId
+    if (apprExecRes.get(beefyId)) {
+      try {
+        const res = await executePayload(chainId, to, data, value);
+        if (!res || !res.status)
+          throw new Error("Execution failed or returned no status:", res);
+
+        poolExecRes.set(beefyId, true);
+
+        console.log(
+          `Pool action payload executed successfully for ${beefyId}: ${res}`
+        );
+      } catch (error) {
+        poolExecRes.set(beefyId, false);
+        console.error(
+          `Failed to execute pool action payload for ${beefyId}:`,
+          error
+        );
+      }
+    }
+  }
+
+  console.log({ apprExecRes, poolExecRes });
+};
+
 const main = async () => {
   try {
     checkEnvVariables();
@@ -217,4 +338,4 @@ const main = async () => {
 
 const bootstrap = () => retryWithBackoff(main, 5, 1000, 2);
 
-module.exports = { bootstrap, isPortfolioHealthy };
+module.exports = { bootstrap, isPortfolioHealthy, executeAll };
