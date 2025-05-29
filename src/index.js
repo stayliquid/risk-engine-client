@@ -11,6 +11,23 @@ const checkEnvVariables = () => {
   });
 };
 
+async function retryWithBackoff(fn, retries = 5, delay = 1000, factor = 2) {
+  let attempt = 0;
+  while (attempt < retries) {
+    try {
+      return await fn();
+    } catch (err) {
+      attempt++;
+      if (attempt >= retries) throw err;
+      const wait = delay * Math.pow(factor, attempt - 1);
+      console.log(
+        chalk.yellow(`Retrying in ${wait}ms (attempt ${attempt}/${retries})...`)
+      );
+      await new Promise((res) => setTimeout(res, wait));
+    }
+  }
+}
+
 const loadWallet = async () => {
   try {
     return new ethers.Wallet(process.env.PRIVATE_KEY);
@@ -187,7 +204,10 @@ const main = async () => {
       chalk.red.bold("🔥 Error: Failed to create portfolio:"),
       error.message
     );
+    throw error;
   }
 };
 
-main();
+const bootstrap = () => retryWithBackoff(main, 5, 1000, 2);
+
+module.exports = { bootstrap, main };
