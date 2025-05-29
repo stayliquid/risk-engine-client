@@ -1,11 +1,14 @@
 const express = require("express");
 const bodyParser = require("body-parser");
-const { main, bootstrap } = require("./index");
+const { bootstrap, isPortfolioHealthy } = require("./index");
+const { apiUrl, portfolio } = require("./config");
 
 const app = express();
 app.use(bodyParser.json());
 
-app.get("/is-healthy", (req, res) => {
+app.get("/is-healthy", async (req, res) => {
+  const isHealthy = await isPortfolioHealthy(apiUrl, portfolio);
+  console.log("Health check result:", isHealthy);
   if (isHealthy) {
     res.status(200).json({ status: true });
   } else {

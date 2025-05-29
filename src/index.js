@@ -2,6 +2,7 @@ require("dotenv").config();
 const axios = require("axios");
 const ethers = require("ethers");
 const chalk = require("chalk");
+const { apiUrl, portfolio } = require("./config");
 
 const checkEnvVariables = () => {
   const requiredEnvVars = ["PRIVATE_KEY", "RISK_API_KEY"];
@@ -109,23 +110,29 @@ const findExistingMatchingPortfolio = (existingPortfolios, newPortfolio) => {
   );
 };
 
-const main = async () => {
-  const apiUrl = "http://localhost:3999";
-  const portfolio = {
-    portfolioId: "main-portfolio",
-    orgId: "risk-api-client",
-    name: "Main Portfolio",
-    chainId: 42161,
-    maxRiskScore: 3.75,
-    rebalanceFrequencyHours: 1,
-    rebalanceWebhookUrl: "https://risk-api-client.vercel.app/webhook-target",
-    minNumPositions: 3,
-    maxNumPositions: 3,
-    initialAmountInUSD: 10,
-    // walletAddr: '<will be derived from private key>',
-    mainAssetAddr: "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
-  };
+const isPortfolioHealthy = async (apiUrl, portfolio) => {
+  try {
+    checkEnvVariables();
+    const wallet = await loadWallet();
+    const myPortfolio = { ...portfolio, walletAddr: wallet.address };
 
+    const existingPortfolios = await getExistingPortfolios(apiUrl);
+    if (existingPortfolios.status === false) return false;
+
+    // 2. Find match
+    const matchedPortfolio = findExistingMatchingPortfolio(
+      existingPortfolios.res.portfolios,
+      myPortfolio
+    );
+    if (!matchedPortfolio) return false;
+
+    return matchedPortfolio.isActive !== false;
+  } catch (err) {
+    return false;
+  }
+};
+
+const main = async () => {
   try {
     checkEnvVariables();
 
@@ -210,4 +217,4 @@ const main = async () => {
 
 const bootstrap = () => retryWithBackoff(main, 5, 1000, 2);
 
-module.exports = { bootstrap, main };
+module.exports = { bootstrap, isPortfolioHealthy };
