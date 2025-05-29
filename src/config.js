@@ -1,18 +1,19 @@
 module.exports = {
-  apiUrl: "http://localhost:3999",
-  rpcUrl: "https://arb1.arbitrum.io/rpc",
+  apiUrl: process.env.RISK_API_URL || "http://localhost:3999",
+  rpcUrl: process.env.RPC_URL || "https://arb1.arbitrum.io/rpc",
   portfolio: {
-    portfolioId: "main-portfolio",
-    orgId: "risk-api-client",
-    name: "Main Portfolio",
-    chainId: 42161,
-    maxRiskScore: 3.75,
-    rebalanceFrequencyHours: 1,
-    rebalanceWebhookUrl: "https://risk-api-client.vercel.app/webhook-target",
-    minNumPositions: 3,
-    maxNumPositions: 3,
-    initialAmountInUSD: 10,
-    // walletAddr: '<will be derived from private key>',
-    mainAssetAddr: "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+    portfolioId: process.env.PORTFOLIO_ID,
+    orgId: process.env.ORG_ID,
+    name: process.env.PORTFOLIO_NAME || "Main Portfolio",
+    chainId: Number(process.env.CHAIN_ID) || 42161, // Arbitrum One
+    maxRiskScore: parseFloat(process.env.MAX_RISK_SCORE) || 3.75,
+    rebalanceFrequencyHours: Number(process.env.REBALANCE_FREQUENCY_HOURS) || 1,
+    rebalanceWebhookUrl: process.env.REBALANCE_WEBHOOK_URL,
+    minNumPositions: Number(process.env.MIN_NUM_POSITIONS) || 3,
+    maxNumPositions: Number(process.env.MAX_NUM_POSITIONS) || 3,
+    initialAmountInUSD: Number(process.env.INITIAL_AMOUNT_IN_USD),
+    mainAssetAddr:
+      process.env.MAIN_ASSET_ADDR ||
+      "0xaf88d065e77c8cC2239327C5EDb3A432268e5831", // USDC on Arbitrum
   },
 };

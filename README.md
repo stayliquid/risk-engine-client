@@ -5,3 +5,5 @@ This is a code that consumes Risk API and can be run in the cloud using a Docker
 ```
 docker run --env-file .env sl-risk-api-client
 ```
+
+## Required variables to set in .env file
