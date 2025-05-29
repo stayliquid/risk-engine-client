@@ -17,6 +17,14 @@ app.get("/is-healthy", async (req, res) => {
 });
 
 app.post("/webhook-target", async (req, res) => {
+  const expectedSecret = process.env.RISK_API_KEY;
+  const authHeader = req.headers.authorization;
+
+  if (!authHeader || authHeader !== `${expectedSecret}`) {
+    console.log("Unauthorized webhook attempt. Header:", authHeader);
+    return res.status(401).json({ error: "Unauthorized" });
+  }
+
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Only POST allowed" });
   }
