@@ -2,6 +2,7 @@ require("dotenv").config();
 const axios = require("axios");
 const ethers = require("ethers");
 const chalk = require("chalk");
+const util = require("util");
 const { apiUrl, portfolio, rpcUrl } = require("./config");
 
 const checkEnvVariables = () => {
@@ -134,14 +135,18 @@ const isPortfolioHealthy = async (apiUrl, portfolio) => {
 
 const submitSignedTx = async (signedTx) => {
   try {
-    const response = await axios.post(
+    const submitRes = await axios.post(
       `${apiUrl}/portfolio/submit-signed-transaction`,
       { signedTx },
       {
         headers: { Authorization: process.env.RISK_API_KEY },
       }
     );
-    return response.data;
+    // console.log(util.inspect({ submitRes }, true, null, true));
+    // console.log(
+    //   util.inspect({ submitResData: submitRes.data }, true, null, true)
+    // );
+    return submitRes.data;
   } catch (error) {
     console.error("Error submitting signed transaction:", error);
     throw error;
@@ -152,6 +157,11 @@ const executePayload = async (chainId, to, data, value) => {
   try {
     const wallet = await loadWallet();
     const provider = new ethers.JsonRpcProvider(rpcUrl);
+    // const wallet = await loadWallet();
+    // const provider = new ethers.JsonRpcProvider(rpcUrl);
+
+    // Get current nonce
+    const nonce = await provider.getTransactionCount(wallet.address, "pending");
 
     // Estimate gas limit
     const gasLimit = await provider.estimateGas({
@@ -173,11 +183,14 @@ const executePayload = async (chainId, to, data, value) => {
       gasLimit,
       maxFeePerGas,
       maxPriorityFeePerGas,
+      nonce,
     };
     const signedTx = await wallet.signTransaction(tx);
 
     // Submit the signed transaction
+    console.log("Submitting signed transaction...");
     const result = await submitSignedTx(signedTx);
+    console.log({ result });
     return result;
   } catch (error) {
     console.error("Error executing payload:", error);
@@ -185,72 +198,143 @@ const executePayload = async (chainId, to, data, value) => {
   }
 };
 
+// const executePayloadWithLogging = async (payload, beefyId) => {
+//   try {
+//     const res = await executePayload(
+//       payload.chainId,
+//       payload.to,
+//       payload.data,
+//       payload.value
+//     );
+//     if (!res?.status) throw res?.error || res;
+//     console.log(`${payload.type} success for ${beefyId}`, res);
+//     return true;
+//   } catch (error) {
+//     console.error(`${payload.type} error for ${beefyId}:`, error);
+//     return false;
+//   }
+// };
+
+// const executePayloadsOfPool = async (beefyId, payloads) => {
+//   if (payloads.length > 2) {
+//     console.error(
+//       `Unsupported number of payloads for ${beefyId}:`,
+//       payloads.length
+//     );
+//     return;
+//   }
+
+//   // Approve first (if present)
+//   const approve = payloads.find((p) => p.type === "tokenApprove");
+//   if (approve) {
+//     const approveSuccess = await executePayloadWithLogging(approve, beefyId);
+//     if (!approveSuccess) return; // Only continue if approve worked
+//   }
+
+//   // Pool action second (if present)
+//   const poolAction = payloads.find((p) => p.type === "poolAction");
+//   if (poolAction) {
+//     await executePayloadWithLogging(poolAction, beefyId);
+//   }
+// };
+
+const executePayloadWithLogging = async (payload, beefyId, status) => {
+  try {
+    const res = await executePayload(
+      payload.chainId,
+      payload.to,
+      payload.data,
+      payload.value
+    );
+    if (!res?.status) throw res?.error || res;
+    console.log(
+      chalk.green.bold(
+        `✅ ${payload.type} success for ${chalk.blue(
+          beefyId
+        )} (status: ${chalk.yellow(status)})`
+      ),
+      res
+    );
+    return { ok: true, payloadType: payload.type };
+  } catch (error) {
+    console.error(
+      chalk.red.bold(
+        `❌ ${payload.type} error for ${chalk.blue(
+          beefyId
+        )} (status: ${chalk.yellow(status)})`
+      ),
+      error
+    );
+    return { ok: false, payloadType: payload.type };
+  }
+};
+
 const executeAll = async (allocations) => {
-  //
-  // Execute approve payloads first
-  //
-  const apprExecRes = new Map(); // Map<beefyId, boolean>
+  // Group by beefyId
+  const grouped = {};
+  for (const allocation of allocations) {
+    const id = allocation.beefyId;
+    if (!grouped[id]) grouped[id] = [];
+    grouped[id].push({
+      ...allocation.payload,
+      originalStatus: allocation.status,
+    });
+  }
 
-  const approvePayloads = allocations.filter(
-    (a) => a.payload.type === "tokenApprove"
-  );
+  const summary = {};
 
-  for await (const approve of approvePayloads) {
-    const { chainId, to, data, value } = approve.payload;
-    const beefyId = approve.beefyId;
-    const txType = approve.payload.type;
+  for (const [beefyId, payloads] of Object.entries(grouped)) {
+    // Always show status of pool (from allocations.status)
+    const status = payloads[0].originalStatus || "unknown";
+    console.log(
+      chalk.cyan.bold(
+        `\n🔄 Executing payloads for Beefy ID: ${beefyId} (status: ${status})`
+      )
+    );
+    summary[beefyId] = {};
 
-    try {
-      const res = await executePayload(chainId, to, data, value);
-      if (!res || !res.status)
-        throw new Error("Execution failed or returned no status:", res);
-
-      apprExecRes.set(beefyId, true);
-
-      console.log(
-        `Approve payload executed successfully for ${beefyId}: ${res}`
+    // Approve first if present
+    const approve = payloads.find((p) => p.type === "tokenApprove");
+    if (approve) {
+      const approveRes = await executePayloadWithLogging(
+        approve,
+        beefyId,
+        status
       );
-    } catch (error) {
-      apprExecRes.set(beefyId, false);
-      console.error(`Failed to execute approve payload for ${beefyId}:`, error);
+      summary[beefyId]["tokenApprove"] = approveRes.ok ? "success" : "failed";
+      if (!approveRes.ok) continue; // skip poolAction if approve failed
     }
-  }
-  console.log({ apprExecRes });
 
-  //
-  // After approves are successfully executed, proceed with the pool actions
-  //
-  const poolExecRes = new Map(); // Map<beefyId, boolean>
-  const poolActionPayloads = allocations.filter(
-    (a) => a.payload.type === "poolAction"
-  );
-  for await (const poolAction of poolActionPayloads) {
-    const { chainId, to, data, value } = poolAction.payload;
-    const beefyId = poolAction.beefyId;
-
-    // Check if approve was successful for this beefyId
-    if (apprExecRes.get(beefyId)) {
-      try {
-        const res = await executePayload(chainId, to, data, value);
-        if (!res || !res.status)
-          throw new Error("Execution failed or returned no status:", res);
-
-        poolExecRes.set(beefyId, true);
-
-        console.log(
-          `Pool action payload executed successfully for ${beefyId}: ${res}`
-        );
-      } catch (error) {
-        poolExecRes.set(beefyId, false);
-        console.error(
-          `Failed to execute pool action payload for ${beefyId}:`,
-          error
-        );
-      }
+    // Pool action second if present
+    const poolAction = payloads.find((p) => p.type === "poolAction");
+    if (poolAction) {
+      const poolActionRes = await executePayloadWithLogging(
+        poolAction,
+        beefyId,
+        status
+      );
+      summary[beefyId]["poolAction"] = poolActionRes.ok ? "success" : "failed";
     }
   }
 
-  console.log({ apprExecRes, poolExecRes });
+  // ---- Summary Section ----
+  console.log(chalk.magenta.bold("\n===== EXECUTION SUMMARY ====="));
+  for (const [beefyId, results] of Object.entries(summary)) {
+    // Find status from allocations (the first one for this beefyId)
+    const poolStatus =
+      (allocations.find((a) => a.beefyId === beefyId) || {}).status ||
+      "unknown";
+    console.log(
+      chalk.blue.bold(
+        `\nBeefy ID: ${beefyId} (status: ${chalk.yellow(poolStatus)})`
+      )
+    );
+    for (const [txType, result] of Object.entries(results)) {
+      const color = result === "success" ? chalk.green : chalk.red;
+      console.log(color(`   ${txType}: ${result.toUpperCase()}`));
+    }
+  }
+  console.log(chalk.magenta.bold("===== END OF SUMMARY =====\n"));
 };
 
 const main = async () => {
