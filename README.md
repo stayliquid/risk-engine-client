@@ -7,3 +7,8 @@ docker run --env-file .env sl-risk-api-client
 ```
 
 ## Required variables to set in .env file
+
+## Run the code
+```
+node ./src/server.js
+```
