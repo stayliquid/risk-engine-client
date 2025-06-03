@@ -13,7 +13,7 @@ git clone https://github.com/stayliquid/risk-engine-client.git
 cd risk-engine-client
 ```
 
-2. **Set up your configuration**
+<<<<<<< HEAD 2. **Set up your configuration**
 
 Copy the example environment file and fill it in:
 
