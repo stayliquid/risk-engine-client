@@ -1,5 +1,5 @@
 module.exports = {
-  apiUrl: process.env.RISK_API_URL || "http://localhost:3999",
+  apiUrl: process.env.RISK_API_URL || "https://risk.api.stayliquid.co",
   rpcUrl: process.env.RPC_URL || "https://arb1.arbitrum.io/rpc",
   portfolio: {
     portfolioId: process.env.PORTFOLIO_ID,
@@ -8,7 +8,7 @@ module.exports = {
     chainId: Number(process.env.CHAIN_ID) || 42161, // Arbitrum One
     maxRiskScore: parseFloat(process.env.MAX_RISK_SCORE) || 3.75,
     rebalanceFrequencyHours: Number(process.env.REBALANCE_FREQUENCY_HOURS) || 1,
-    rebalanceWebhookUrl: process.env.REBALANCE_WEBHOOK_URL,
+    serverUrl: process.env.SERVER_URL,
     minNumPositions: Number(process.env.MIN_NUM_POSITIONS) || 3,
     maxNumPositions: Number(process.env.MAX_NUM_POSITIONS) || 3,
     initialAmountInUSD: Number(process.env.INITIAL_AMOUNT_IN_USD),

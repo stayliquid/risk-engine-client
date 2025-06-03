@@ -48,7 +48,10 @@ const createPortfolio = async (apiUrl, portfolio) => {
       chainId: portfolio.chainId,
       maxRiskScore: portfolio.maxRiskScore,
       rebalanceFrequencyHours: portfolio.rebalanceFrequencyHours,
-      rebalanceWebhookUrl: portfolio.rebalanceWebhookUrl,
+      rebalanceWebhookUrl: new URL(
+        "/webhook-target",
+        portfolio.serverUrl
+      ).toString(),
       minNumPositions: portfolio.minNumPositions,
       maxNumPositions: portfolio.maxNumPositions,
       initialAmountInUSD: portfolio.initialAmountInUSD,
