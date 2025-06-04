@@ -22,6 +22,8 @@ cp .env.example .env
 nano .env
 ```
 
+See the [Configuration](#-configuration) section for details on each environment variable.
+
 3. **Run with Docker Compose**
 
 ```bash
@@ -80,31 +82,15 @@ The app reads environment variables from a `.env` file. See `.env.example` for f
 
 ### Required
 
-- `PRIVATE_KEY` - Main wallet private key (must have USDC on Arbitrum)
-- `RISK_API_KEY` – Your API key for Stay Liquid's Risk API (request from Stay Liquid team)
-- `PORTFOLIO_ID` - ID of the portfolio you're creating (e.g., "main-portfolio")
-- `INITIAL_AMOUNT_IN_USD` - Initial amount in USD to start the portfolio (number)
-- `SERVER_URL` - URL or IP addresss of the current server where the code is running on
+- `PRIVATE_KEY` – Your portfolio’s main wallet private key. **Note**: The wallet must have [USDC on Arbitrum](https://arbiscan.io/token/0xaf88d065e77c8cc2239327c5edb3a432268e5831).
+- `RISK_API_KEY` – Your unique organization API key for Stay Liquid’s Risk API. If you don’t have one, request it from our team.
+- `PORTFOLIO_ID` – The ID of the portfolio you’ll be creating. Can be any string, dashes allowed (e.g., "main-portfolio").
+- `INITIAL_AMOUNT_IN_USD` – Starting portfolio amount, in number of USDC tokens.
+- `SERVER_URL` – URL or IP address of the server where this code is running.
 
 ### Optional (with defaults)
 
 Check `.env.example` file to see the full config.
-
----
-
-## 📦 Docker Compose (for self-hosting)
-
-```yaml
-version: "3"
-services:
-  risk-engine-client:
-    build: .
-    ports:
-      - "3000:3000"
-    env_file:
-      - .env
-    restart: always
-```
 
 ---
 
