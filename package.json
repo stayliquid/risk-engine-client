@@ -3,6 +3,9 @@
   "version": "0.1.0",
   "main": "index.js",
   "author": "Misha Kushka <misha@stayliquidco>",
+  "scripts": {
+    "start": "node src/server.js"
+  },
   "dependencies": {
     "axios": "^1.9.0",
     "body-parser": "^2.2.0",

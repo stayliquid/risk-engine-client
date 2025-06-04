@@ -108,11 +108,8 @@ const activatePortfolio = async (apiUrl, portfolioId) => {
   }
 };
 
-const findExistingMatchingPortfolio = (existingPortfolios, newPortfolio) => {
-  return existingPortfolios.find(
-    (p) => p.id === newPortfolio.portfolioId && p.orgId === newPortfolio.orgId
-  );
-};
+const findExistingMatchingPortfolio = (existingPortfolios, newPortfolio) =>
+  existingPortfolios.find((p) => p.id === newPortfolio.portfolioId);
 
 const isPortfolioHealthy = async (apiUrl, portfolio) => {
   try {
