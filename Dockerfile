@@ -1,4 +1,4 @@
-FROM node:23-alpine-slim
+FROM node:lts-alpine
 WORKDIR /app
 COPY package.json yarn.lock ./
 RUN yarn install --frozen-lockfile

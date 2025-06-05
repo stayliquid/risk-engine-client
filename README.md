@@ -44,7 +44,39 @@ The server will be available at: `http://localhost:3000` or the port defined in 
 ssh root@your-droplet-ip
 ```
 
-3. **Clone the repository**
+3. **Install Docker and Docker Compose**
+
+```bash
+# Update package list and install prerequisites
+apt-get update
+apt-get install -y ca-certificates curl gnupg
+
+# Add Docker’s official GPG key
+install -m 0755 -d /etc/apt/keyrings
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+
+# Set up Docker repository
+echo \
+  "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu \
+  $(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null
+
+# Install Docker Engine and Docker Compose plugin
+apt-get update
+apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+
+# Enable and start Docker
+systemctl enable docker
+systemctl start docker
+```
+
+4. **Verify Docker installation**
+
+```bash
+docker --version
+docker compose version
+```
+
+5. **Clone the repository**
 
 ```bash
 git clone https://github.com/stayliquid/risk-engine-client.git
@@ -55,13 +87,13 @@ cd risk-engine-client
 
 ```bash
 cp .env.example .env
-nano .env  # Fill in your values
+vim .env  # Fill in your values
 ```
 
 5. **Run in the background**
 
 ```bash
-docker compose up --build -d
+docker compose up --build
 ```
 
 6. **Verify it's working**
@@ -85,8 +117,8 @@ The app reads environment variables from a `.env` file. See `.env.example` for f
 - `PRIVATE_KEY` – Your portfolio’s main wallet private key. **Note**: The wallet must have [USDC on Arbitrum](https://arbiscan.io/token/0xaf88d065e77c8cc2239327c5edb3a432268e5831).
 - `RISK_API_KEY` – Your unique organization API key for Stay Liquid’s Risk API. If you don’t have one, request it from our team.
 - `PORTFOLIO_ID` – The ID of the portfolio you’ll be creating. Can be any string, dashes allowed (e.g., "main-portfolio").
-- `INITIAL_AMOUNT_IN_USD` – Starting portfolio amount, in number of USDC tokens.
-- `SERVER_URL` – URL or IP address of the server where this code is running.
+- `INITIAL_AMOUNT_IN_USD` – Starting portfolio amount, in number of USDC tokens. Minimum is 10,000.
+- `SERVER_URL` – URL or IP address of the server where this code is running (e.g., `1.1.1.1`, `http://1.1.1.1`, or `https://yourdomain.com`)
 
 ### Optional (with defaults)
 
