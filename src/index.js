@@ -2,8 +2,10 @@ require("dotenv").config();
 const axios = require("axios");
 const ethers = require("ethers");
 const chalk = require("chalk");
-const util = require("util");
 const { apiUrl, portfolio, rpcUrl } = require("./config");
+
+const normalizeUrl = (input) =>
+  /^https?:\/\//i.test(input) ? input : `http://${input}`;
 
 const checkEnvVariables = () => {
   const requiredEnvVars = ["PRIVATE_KEY", "RISK_API_KEY"];
@@ -50,7 +52,7 @@ const createPortfolio = async (apiUrl, portfolio) => {
       rebalanceFrequencyHours: portfolio.rebalanceFrequencyHours,
       rebalanceWebhookUrl: new URL(
         "/webhook-target",
-        portfolio.serverUrl
+        normalizeUrl(portfolio.serverUrl)
       ).toString(),
       minNumPositions: portfolio.minNumPositions,
       maxNumPositions: portfolio.maxNumPositions,
@@ -58,6 +60,13 @@ const createPortfolio = async (apiUrl, portfolio) => {
       walletAddr: portfolio.walletAddr,
       mainAssetAddr: portfolio.mainAssetAddr,
     };
+    console.log(
+      chalk.cyan.bold("📊 Creating portfolio with parameters:"),
+      "\n",
+      chalk.magenta("Parameters:"),
+      params
+    );
+
     const query = new URLSearchParams(params).toString();
     const response = await axios.post(
       `${apiUrl}/portfolio/create?${query}`,
@@ -142,10 +151,6 @@ const submitSignedTx = async (signedTx) => {
         headers: { Authorization: process.env.RISK_API_KEY },
       }
     );
-    // console.log(util.inspect({ submitRes }, true, null, true));
-    // console.log(
-    //   util.inspect({ submitResData: submitRes.data }, true, null, true)
-    // );
     return submitRes.data;
   } catch (error) {
     console.error("Error submitting signed transaction:", error);
@@ -157,8 +162,6 @@ const executePayload = async (chainId, to, data, value) => {
   try {
     const wallet = await loadWallet();
     const provider = new ethers.JsonRpcProvider(rpcUrl);
-    // const wallet = await loadWallet();
-    // const provider = new ethers.JsonRpcProvider(rpcUrl);
 
     // Get current nonce
     const nonce = await provider.getTransactionCount(wallet.address, "pending");
@@ -197,46 +200,6 @@ const executePayload = async (chainId, to, data, value) => {
     throw error;
   }
 };
-
-// const executePayloadWithLogging = async (payload, beefyId) => {
-//   try {
-//     const res = await executePayload(
-//       payload.chainId,
-//       payload.to,
-//       payload.data,
-//       payload.value
-//     );
-//     if (!res?.status) throw res?.error || res;
-//     console.log(`${payload.type} success for ${beefyId}`, res);
-//     return true;
-//   } catch (error) {
-//     console.error(`${payload.type} error for ${beefyId}:`, error);
-//     return false;
-//   }
-// };
-
-// const executePayloadsOfPool = async (beefyId, payloads) => {
-//   if (payloads.length > 2) {
-//     console.error(
-//       `Unsupported number of payloads for ${beefyId}:`,
-//       payloads.length
-//     );
-//     return;
-//   }
-
-//   // Approve first (if present)
-//   const approve = payloads.find((p) => p.type === "tokenApprove");
-//   if (approve) {
-//     const approveSuccess = await executePayloadWithLogging(approve, beefyId);
-//     if (!approveSuccess) return; // Only continue if approve worked
-//   }
-
-//   // Pool action second (if present)
-//   const poolAction = payloads.find((p) => p.type === "poolAction");
-//   if (poolAction) {
-//     await executePayloadWithLogging(poolAction, beefyId);
-//   }
-// };
 
 const executePayloadWithLogging = async (payload, beefyId, status) => {
   try {
