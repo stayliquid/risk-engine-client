@@ -11,7 +11,10 @@ module.exports = {
     serverUrl: process.env.SERVER_URL,
     minNumPositions: Number(process.env.MIN_NUM_POSITIONS) || 3,
     maxNumPositions: Number(process.env.MAX_NUM_POSITIONS) || 3,
-    initialAmountInUSD: Number(process.env.INITIAL_AMOUNT_IN_USD),
+    initialAmountInUSD:
+      process.env.INITIAL_AMOUNT_IN_USD 
+      ? Number(process.env.INITIAL_AMOUNT_IN_USD) 
+      : undefined,
     mainAssetAddr:
       process.env.MAIN_ASSET_ADDR ||
       "0xaf88d065e77c8cC2239327C5EDb3A432268e5831", // USDC on Arbitrum

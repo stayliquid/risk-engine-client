@@ -117,7 +117,6 @@ The app reads environment variables from a `.env` file. See `.env.example` for f
 - `PRIVATE_KEY` – Your portfolio’s main wallet private key. **Note**: The wallet must have [USDC on Arbitrum](https://arbiscan.io/token/0xaf88d065e77c8cc2239327c5edb3a432268e5831).
 - `RISK_API_KEY` – Your unique organization API key for Stay Liquid’s Risk API. If you don’t have one, request it from our team.
 - `PORTFOLIO_ID` – The ID of the portfolio you’ll be creating. Can be any string, dashes allowed (e.g., "main-portfolio").
-- `INITIAL_AMOUNT_IN_USD` – Starting portfolio amount, in number of USDC tokens. Minimum is 10,000.
 - `SERVER_URL` – URL or IP address of the server where this code is running (e.g., `1.1.1.1`, `http://1.1.1.1`, or `https://yourdomain.com`)
 
 ### Optional (with defaults)
