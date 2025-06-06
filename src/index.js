@@ -15,6 +15,10 @@ const checkEnvVariables = () => {
   });
 };
 
+const getAuthHeader = () => ({
+  headers: { Authorization: `Bearer ${process.env.RISK_API_KEY}` },
+});
+
 const retryWithBackoff = async (fn, retries = 5, delay = 1000, factor = 2) => {
   let attempt = 0;
   while (attempt < retries) {
@@ -71,9 +75,7 @@ const createPortfolio = async (apiUrl, portfolio) => {
     const response = await axios.post(
       `${apiUrl}/portfolio/create?${query}`,
       {},
-      {
-        headers: { Authorization: process.env.RISK_API_KEY },
-      }
+      getAuthHeader(),
     );
     return response.data;
   } catch (error) {
@@ -84,9 +86,10 @@ const createPortfolio = async (apiUrl, portfolio) => {
 
 const getExistingPortfolios = async (apiUrl) => {
   try {
-    const response = await axios.get(`${apiUrl}/portfolio/my-portfolios`, {
-      headers: { Authorization: process.env.RISK_API_KEY },
-    });
+    const response = await axios.get(
+      `${apiUrl}/portfolio/my-portfolios`,
+      getAuthHeader(),
+    );
     return response.data;
   } catch (error) {
     console.error(
@@ -103,9 +106,7 @@ const activatePortfolio = async (apiUrl, portfolioId) => {
     const response = await axios.post(
       `${apiUrl}/portfolio/activate?${query}`,
       {},
-      {
-        headers: { Authorization: process.env.RISK_API_KEY },
-      }
+      getAuthHeader(),
     );
     return response.data;
   } catch (error) {
@@ -147,9 +148,7 @@ const submitSignedTx = async (signedTx) => {
     const submitRes = await axios.post(
       `${apiUrl}/portfolio/submit-signed-transaction`,
       { signedTx },
-      {
-        headers: { Authorization: process.env.RISK_API_KEY },
-      }
+      getAuthHeader(),
     );
     return submitRes.data;
   } catch (error) {
