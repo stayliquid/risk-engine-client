@@ -27,7 +27,7 @@ See the [Configuration](#-configuration) section for details on each environment
 3. **Run with Docker Compose**
 
 ```bash
-docker compose up --build
+docker compose up --build -d
 ```
 
 The server will be available at: `http://localhost:3000` or the port defined in your `.env` file.
