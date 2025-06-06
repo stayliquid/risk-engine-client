@@ -60,14 +60,17 @@ const createPortfolio = async (apiUrl, portfolio) => {
       walletAddr: portfolio.walletAddr,
       mainAssetAddr: portfolio.mainAssetAddr,
     };
+    const cleanParams = Object.fromEntries(
+      Object.entries(params).filter(([_, v]) => v !== undefined)
+    );
     console.log(
       chalk.cyan.bold("📊 Creating portfolio with parameters:"),
       "\n",
       chalk.magenta("Parameters:"),
-      params
+      cleanParams,
     );
 
-    const query = new URLSearchParams(params).toString();
+    const query = new URLSearchParams(cleanParams).toString();
     const response = await axios.post(
       `${apiUrl}/portfolio/create?${query}`,
       {},
