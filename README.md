@@ -93,7 +93,7 @@ vim .env  # Fill in your values
 5. **Run in the background**
 
 ```bash
-docker compose up --build
+docker compose up --build -d
 ```
 
 6. **Verify it's working**
