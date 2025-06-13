@@ -23,7 +23,6 @@ app.post("/webhook-target", async (req, res) => {
   const apiKey = process.env.RISK_API_KEY;
   const authHeader = req.headers.authorization;
   const apiKeyHash = createHash("sha256").update(apiKey).digest("hex");
-  console.log({ authHeader, apiKeyHash });
 
   if (!authHeader || authHeader !== `Bearer ${apiKeyHash}`) {
     console.log("Unauthorized webhook attempt. Header:", authHeader);
