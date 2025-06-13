@@ -44,8 +44,6 @@ app.post("/webhook-target", async (req, res) => {
 
   // Sign and submit the payload
   try {
-    const { body } = req;
-    console.log({ body });
     const { event, allocations } = req.body;
     if (!event || !allocations) {
       return res.status(400).json({

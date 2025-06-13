@@ -71,14 +71,14 @@ const createPortfolio = async (apiUrl, portfolio) => {
       chalk.cyan.bold("📊 Creating portfolio with parameters:"),
       "\n",
       chalk.magenta("Parameters:"),
-      cleanParams,
+      cleanParams
     );
 
     const query = new URLSearchParams(cleanParams).toString();
     const response = await axios.post(
       `${apiUrl}/portfolio/create?${query}`,
       {},
-      getAuthHeader(),
+      getAuthHeader()
     );
     return response.data;
   } catch (error) {
@@ -91,7 +91,7 @@ const getExistingPortfolios = async (apiUrl) => {
   try {
     const response = await axios.get(
       `${apiUrl}/portfolio/my-portfolios`,
-      getAuthHeader(),
+      getAuthHeader()
     );
     return response.data;
   } catch (error) {
@@ -109,7 +109,7 @@ const activatePortfolio = async (apiUrl, portfolioId) => {
     const response = await axios.post(
       `${apiUrl}/portfolio/activate?${query}`,
       {},
-      getAuthHeader(),
+      getAuthHeader()
     );
     return response.data;
   } catch (error) {
@@ -151,7 +151,7 @@ const submitSignedTx = async (signedTx) => {
     const submitRes = await axios.post(
       `${apiUrl}/portfolio/submit-signed-transaction`,
       { signedTx },
-      getAuthHeader(),
+      getAuthHeader()
     );
     return submitRes.data;
   } catch (error) {
@@ -235,6 +235,17 @@ const executePayloadWithLogging = async (payload, beefyId, status) => {
 };
 
 const executeAll = async (allocations) => {
+  // Sort allocations: tokenApproveJoin/Exit first, then poolExit, then poolJoin
+  allocations.sort((a, b) => {
+    const order = {
+      tokenApproveExit: 1,
+      tokenApproveJoin: 1,
+      poolExit: 2,
+      poolJoin: 3,
+    };
+    return (order[a.payload.type] || 4) - (order[b.payload.type] || 4);
+  });
+
   // Group by beefyId
   const grouped = {};
   for (const allocation of allocations) {
@@ -245,6 +256,8 @@ const executeAll = async (allocations) => {
       originalStatus: allocation.status,
     });
   }
+
+  // Now exits will be executed first, then joins
 
   const summary = {};
 
@@ -259,7 +272,9 @@ const executeAll = async (allocations) => {
     summary[beefyId] = {};
 
     // Approve first if present
-    const approve = payloads.find((p) => p.type === "tokenApprove");
+    const approve = payloads.find(
+      (p) => p.type === "tokenApproveJoin" || p.type === "tokenApproveExit"
+    );
     if (approve) {
       const approveRes = await executePayloadWithLogging(
         approve,
@@ -271,7 +286,9 @@ const executeAll = async (allocations) => {
     }
 
     // Pool action second if present
-    const poolAction = payloads.find((p) => p.type === "poolAction");
+    const poolAction = payloads.find(
+      (p) => p.type === "poolJoin" || p.type === "poolExit"
+    );
     if (poolAction) {
       const poolActionRes = await executePayloadWithLogging(
         poolAction,
@@ -323,6 +340,7 @@ const main = async () => {
       );
       return;
     }
+    // console.log({ existingPortfolios: existingPortfolios.res.portfolios });
 
     const matchedPortfolio = findExistingMatchingPortfolio(
       existingPortfolios.res.portfolios,
