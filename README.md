@@ -30,6 +30,13 @@ See the [Configuration](#-configuration) section for details on each environment
 docker compose up --build -d
 ```
 
+4. **Check the app logs**
+
+```bash
+sudo chmod +x ./logs.sh
+./logs.sh
+```
+
 The server will be available at: `http://localhost:3000` or the port defined in your `.env` file.
 
 ---
