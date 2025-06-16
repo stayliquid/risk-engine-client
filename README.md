@@ -106,12 +106,32 @@ docker compose up --build -d
 6. **Verify it's working**
 
 ```bash
-docker logs -f $(docker ps -q)
+sudo chmod +x ./logs.sh
+./logs.sh
 ```
 
 You can now access your service at `http://your-droplet-ip:3000`
 
 > Tip: Use Nginx + Certbot for domain + HTTPS if needed. Ask us for the setup script.
+
+---
+
+## Sync with latest changes
+
+1. **Login to your server**
+
+2. **Pull new changes**
+
+```bash
+cd risk-engine-client
+git pull
+```
+
+3. **Restart Docker process**
+
+```bash
+docker compose up --build -d
+```
 
 ---
 
