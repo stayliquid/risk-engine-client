@@ -55,7 +55,7 @@ vim .env  # Fill in your values
 5. **Run in the background**
 
 ```bash
-sudo chmod +x ./start.sh
+sudo chmod +x ./start.sh # only run once
 ./start.sh
 ```
 
@@ -91,8 +91,7 @@ cd risk-engine-client
 3. **Git pull and restart Docker process**
 
 ```bash
-sudo chmod +x ./restart.sh # only to run once
-./restart.sh
+./start.sh
 ```
 
 ---
