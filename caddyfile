@@ -1,0 +1,3 @@
+4su8.risk-api.stayliquidweb.site {
+  reverse_proxy risk-engine-client:3000
+}
