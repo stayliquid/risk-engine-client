@@ -97,7 +97,12 @@ cp .env.example .env
 vim .env  # Fill in your values
 ```
 
-5. **Run in the background**
+5. **Update caddyfile for https connection to the server**
+
+   1. In `./caddyfile` replace `YOUR_COMPANY_NAME_LOWERCASED` with the actual company name
+   2. Let know Stay Liquid team your server IP for them to setup your subdomain
+
+6. **Run in the background**
 
 ```bash
 docker compose up --build -d
@@ -110,6 +115,12 @@ sudo chmod +x ./logs.sh
 ./logs.sh
 ```
 
+7. **(after Stay Liquid linked your domain with your server IP)**
+
+```bash
+curl http://<your-company-name>.risk-api.stayliquidweb.site/is-healthy # should return {"status":true}
+```
+
 You can now access your service at `http://your-droplet-ip:3000`
 
 > Tip: Use Nginx + Certbot for domain + HTTPS if needed. Ask us for the setup script.
@@ -120,17 +131,20 @@ You can now access your service at `http://your-droplet-ip:3000`
 
 1. **Login to your server**
 
-2. **Pull new changes**
+2. **Go to the repository**
 
 ```bash
 cd risk-engine-client
-git pull
 ```
 
-3. **Restart Docker process**
+3. **Git pull and restart Docker process**
 
 ```bash
-docker compose up --build -d
+sudo chmod +x ./restart.sh # only to run once
+```
+
+```bash
+./restart.sh
 ```
 
 ---

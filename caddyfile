@@ -1,0 +1,3 @@
+YOUR_COMPANY_NAME_LOWERCASED.risk-api.stayliquidweb.site {
+  reverse_proxy risk-engine-client:3000
+}
