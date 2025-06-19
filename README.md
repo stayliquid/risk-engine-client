@@ -6,52 +6,7 @@ This repository provides a lightweight client for interacting with Stay Liquid's
 
 ## 🚀 Quickstart (Local Docker Setup)
 
-1. **Clone the repository**
-
-```bash
-git clone https://github.com/stayliquid/risk-engine-client.git
-cd risk-engine-client
-```
-
-1. **Set up your configuration**
-
-Copy the example environment file and fill it in:
-
-```bash
-cp .env.example .env
-nano .env
-```
-
-See the [Configuration](#-configuration) section for details on each environment variable.
-
-3. **Run with Docker Compose**
-
-```bash
-docker compose up --build -d
-```
-
-4. **Check the app logs**
-
-```bash
-sudo chmod +x ./logs.sh
-./logs.sh
-```
-
-The server will be available at: `http://localhost:3000` or the port defined in your `.env` file.
-
----
-
-## 🌐 Deploy to DigitalOcean (1-Click)
-
-1. **Create a new Droplet** on DigitalOcean with Docker pre-installed.
-
-2. **SSH into the Droplet**
-
-```bash
-ssh root@your-droplet-ip
-```
-
-3. **Install Docker and Docker Compose**
+1. **(if not installed) Install Docker and Docker Compose**
 
 ```bash
 # Update package list and install prerequisites
@@ -76,14 +31,14 @@ systemctl enable docker
 systemctl start docker
 ```
 
-4. **Verify Docker installation**
+2. **Verify Docker installation**
 
 ```bash
 docker --version
 docker compose version
 ```
 
-5. **Clone the repository**
+3. **Clone the repository**
 
 ```bash
 git clone https://github.com/stayliquid/risk-engine-client.git
@@ -97,15 +52,11 @@ cp .env.example .env
 vim .env  # Fill in your values
 ```
 
-5. **Update caddyfile for https connection to the server**
-
-   1. In `./caddyfile` replace `YOUR_COMPANY_NAME_LOWERCASED` with the actual company name
-   2. Let know Stay Liquid team your server IP for them to setup your subdomain
-
-6. **Run in the background**
+5. **Run in the background**
 
 ```bash
-docker compose up --build -d
+sudo chmod +x ./start.sh
+./start.sh
 ```
 
 6. **Verify it's working**
@@ -141,9 +92,6 @@ cd risk-engine-client
 
 ```bash
 sudo chmod +x ./restart.sh # only to run once
-```
-
-```bash
 ./restart.sh
 ```
 
@@ -155,6 +103,7 @@ The app reads environment variables from a `.env` file. See `.env.example` for f
 
 ### Required
 
+- `COMPANY_NAME` - Your company name lowercased and dashed (e.g., "stay-liquid")
 - `PRIVATE_KEY` – Your portfolio’s main wallet private key. **Note**: The wallet must have [USDC on Arbitrum](https://arbiscan.io/token/0xaf88d065e77c8cc2239327c5edb3a432268e5831).
 - `RISK_API_KEY` – Your unique organization API key for Stay Liquid’s Risk API. If you don’t have one, request it from our team.
 - `PORTFOLIO_ID` – The ID of the portfolio you’ll be creating. Can be any dashed string (e.g., "main-portfolio").

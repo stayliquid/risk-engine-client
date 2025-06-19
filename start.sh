@@ -1,3 +1,2 @@
-git pull
 export $(grep COMPANY_NAME .env); sed -i "s/YOUR_COMPANY_NAME_LOWERCASED/${COMPANY_NAME}/g" caddyfile # Update Caddyfile with company name
-docker compose up --build -d
+docker compose up --build -d # Start the Docker containers (Caddy and the app)
