@@ -1,1 +1,1 @@
-docker logs --tail 1000 -f $(docker ps -q)
+docker logs --tail 1000 -f risk-engine-client
