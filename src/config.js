@@ -8,7 +8,7 @@ module.exports = {
     chainId: Number(process.env.CHAIN_ID) || 42161, // Arbitrum One
     maxRiskScore: parseFloat(process.env.MAX_RISK_SCORE) || 3.75,
     rebalanceFrequencyHours:
-      Number(process.env.REBALANCE_FREQUENCY_HOURS) || 24 * 7, // weekly
+      Number(process.env.REBALANCE_FREQUENCY_HOURS) || 24 * 7 * 2, // bi-weekly
     serverUrl: process.env.SERVER_URL,
     minNumPositions: Number(process.env.MIN_NUM_POSITIONS) || 3,
     maxNumPositions: Number(process.env.MAX_NUM_POSITIONS) || 3,
