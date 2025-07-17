@@ -1,14 +1,14 @@
-require("dotenv").config();
-const axios = require("axios");
-const ethers = require("ethers");
-const chalk = require("chalk");
-const { apiUrl, portfolio, rpcUrl } = require("./config");
+require('dotenv').config();
+const axios = require('axios');
+const ethers = require('ethers');
+const chalk = require('chalk');
+const { apiUrl, portfolio, rpcUrl } = require('./config');
 
 const normalizeUrl = (input) =>
   /^https?:\/\//i.test(input) ? input : `http://${input}`;
 
 const checkEnvVariables = () => {
-  const requiredEnvVars = ["PRIVATE_KEY", "RISK_API_KEY"];
+  const requiredEnvVars = ['PRIVATE_KEY', 'RISK_API_KEY'];
   requiredEnvVars.forEach((envVar) => {
     if (!process.env[envVar])
       throw new Error(`Missing required environment variable: ${envVar}`);
@@ -40,7 +40,7 @@ const loadWallet = async () => {
   try {
     return new ethers.Wallet(process.env.PRIVATE_KEY);
   } catch (error) {
-    console.error("Error loading wallet:", error);
+    console.error('Error loading wallet:', error);
     throw error;
   }
 };
@@ -55,7 +55,7 @@ const createPortfolio = async (apiUrl, portfolio) => {
       maxRiskScore: portfolio.maxRiskScore,
       rebalanceFrequencyHours: portfolio.rebalanceFrequencyHours,
       rebalanceWebhookUrl: new URL(
-        "/webhook-target",
+        '/webhook-target',
         normalizeUrl(portfolio.serverUrl)
       ).toString(),
       minNumPositions: portfolio.minNumPositions,
@@ -68,9 +68,9 @@ const createPortfolio = async (apiUrl, portfolio) => {
       Object.entries(params).filter(([_, v]) => v !== undefined)
     );
     console.log(
-      chalk.cyan.bold("📊 Creating portfolio with parameters:"),
-      "\n",
-      chalk.magenta("Parameters:"),
+      chalk.cyan.bold('📊 Creating portfolio with parameters:'),
+      '\n',
+      chalk.magenta('Parameters:'),
       cleanParams
     );
 
@@ -82,7 +82,7 @@ const createPortfolio = async (apiUrl, portfolio) => {
     );
     return response.data;
   } catch (error) {
-    console.error("Failed to create portfolio:", error.response?.data || error);
+    console.error('Failed to create portfolio:', error.response?.data || error);
     throw error;
   }
 };
@@ -96,7 +96,7 @@ const getExistingPortfolios = async (apiUrl) => {
     return response.data;
   } catch (error) {
     console.error(
-      "Failed to fetch existing portfolios:",
+      'Failed to fetch existing portfolios:',
       error.response?.data || error
     );
     throw error;
@@ -114,7 +114,7 @@ const activatePortfolio = async (apiUrl, portfolioId) => {
     return response.data;
   } catch (error) {
     console.error(
-      "Failed to activate portfolio:",
+      'Failed to activate portfolio:',
       error.response?.data || error
     );
     throw error;
@@ -155,7 +155,7 @@ const submitSignedTx = async (signedTx) => {
     );
     return submitRes.data;
   } catch (error) {
-    console.error("Error submitting signed transaction:", error);
+    console.error('Error submitting signed transaction:', error);
     throw error;
   }
 };
@@ -166,7 +166,7 @@ const executePayload = async (chainId, to, data, value) => {
     const provider = new ethers.JsonRpcProvider(rpcUrl);
 
     // Get current nonce
-    const nonce = await provider.getTransactionCount(wallet.address, "pending");
+    const nonce = await provider.getTransactionCount(wallet.address, 'pending');
 
     // Estimate gas limit
     const gasLimit = await provider.estimateGas({
@@ -193,12 +193,12 @@ const executePayload = async (chainId, to, data, value) => {
     const signedTx = await wallet.signTransaction(tx);
 
     // Submit the signed transaction
-    console.log("Submitting signed transaction...");
+    console.log('Submitting signed transaction...');
     const result = await submitSignedTx(signedTx);
     console.log({ result });
     return result;
   } catch (error) {
-    console.error("Error executing payload:", error);
+    console.error('Error executing payload:', error);
     throw error;
   }
 };
@@ -235,88 +235,39 @@ const executePayloadWithLogging = async (payload, beefyId, status) => {
 };
 
 const executeAll = async (allocations) => {
-  // Sort allocations: tokenApproveJoin/Exit first, then poolExit, then poolJoin
-  allocations.sort((a, b) => {
-    const order = {
-      tokenApproveExit: 1,
-      tokenApproveJoin: 1,
-      poolExit: 2,
-      poolJoin: 3,
-    };
-    return (order[a.payload.type] || 4) - (order[b.payload.type] || 4);
-  });
+  console.log(
+    chalk.cyan.bold(`\n▶️ Starting execution of ${allocations.length} steps...`)
+  );
 
-  // Group by beefyId
-  const grouped = {};
-  for (const allocation of allocations) {
-    const id = allocation.beefyId;
-    if (!grouped[id]) grouped[id] = [];
-    grouped[id].push({
-      ...allocation.payload,
-      originalStatus: allocation.status,
-    });
-  }
+  // The `allocations` array is already sorted by the backend.
 
-  // Now exits will be executed first, then joins
+  for (let i = 0; i < allocations.length; i++) {
+    const allocation = allocations[i];
+    const { payload, beefyId, status } = allocation;
+    const stepNumber = i + 1;
 
-  const summary = {};
-
-  for (const [beefyId, payloads] of Object.entries(grouped)) {
-    // Always show status of pool (from allocations.status)
-    const status = payloads[0].originalStatus || "unknown";
     console.log(
-      chalk.cyan.bold(
-        `\n🔄 Executing payloads for Beefy ID: ${beefyId} (status: ${status})`
+      chalk.magenta(
+        `\n---\nStep ${stepNumber} of ${allocations.length}: ${chalk.bold(
+          payload.type
+        )} for pool ${chalk.blue(beefyId)} (status: ${status})`
       )
     );
-    summary[beefyId] = {};
 
-    // Approve first if present
-    const approve = payloads.find(
-      (p) => p.type === "tokenApproveJoin" || p.type === "tokenApproveExit"
-    );
-    if (approve) {
-      const approveRes = await executePayloadWithLogging(
-        approve,
-        beefyId,
-        status
-      );
-      summary[beefyId]["tokenApprove"] = approveRes.ok ? "success" : "failed";
-      if (!approveRes.ok) continue; // skip poolAction if approve failed
-    }
+    const result = await executePayloadWithLogging(payload, beefyId, status);
 
-    // Pool action second if present
-    const poolAction = payloads.find(
-      (p) => p.type === "poolJoin" || p.type === "poolExit"
-    );
-    if (poolAction) {
-      const poolActionRes = await executePayloadWithLogging(
-        poolAction,
-        beefyId,
-        status
-      );
-      summary[beefyId]["poolAction"] = poolActionRes.ok ? "success" : "failed";
+    // If any step fails, we immediately stop the entire process.
+    if (!result.ok) {
+      const errorMessage = `Execution failed at step ${stepNumber} (${payload.type} for ${beefyId})`;
+      console.error(chalk.red.bold(`\n🔥 ${errorMessage}. Halting process.`));
+      return { success: false, error: errorMessage };
     }
   }
 
-  // ---- Summary Section ----
-  console.log(chalk.magenta.bold("\n===== EXECUTION SUMMARY ====="));
-  for (const [beefyId, results] of Object.entries(summary)) {
-    // Find status from allocations (the first one for this beefyId)
-    const poolStatus =
-      (allocations.find((a) => a.beefyId === beefyId) || {}).status ||
-      "unknown";
-    console.log(
-      chalk.blue.bold(
-        `\nBeefy ID: ${beefyId} (status: ${chalk.yellow(poolStatus)})`
-      )
-    );
-    for (const [txType, result] of Object.entries(results)) {
-      const color = result === "success" ? chalk.green : chalk.red;
-      console.log(color(`   ${txType}: ${result.toUpperCase()}`));
-    }
-  }
-  console.log(chalk.magenta.bold("===== END OF SUMMARY =====\n"));
+  console.log(
+    chalk.green.bold('\n✅ All rebalancing steps completed successfully!')
+  );
+  return { success: true };
 };
 
 const main = async () => {
@@ -326,16 +277,16 @@ const main = async () => {
     const wallet = await loadWallet();
     portfolio.walletAddr = wallet.address;
     console.log(
-      chalk.cyan.bold("🔑 Wallet address derived from private key:"),
+      chalk.cyan.bold('🔑 Wallet address derived from private key:'),
       chalk.green(portfolio.walletAddr)
     );
 
     // Step 1: Check for existing portfolio
-    console.log(chalk.yellow.bold("\n🔎 Step 1: Check for existing portfolio"));
+    console.log(chalk.yellow.bold('\n🔎 Step 1: Check for existing portfolio'));
     const existingPortfolios = await getExistingPortfolios(apiUrl);
     if (existingPortfolios.status === false) {
       console.error(
-        chalk.red.bold("❌ Failed to fetch existing portfolios:"),
+        chalk.red.bold('❌ Failed to fetch existing portfolios:'),
         existingPortfolios.error
       );
       return;
@@ -349,26 +300,26 @@ const main = async () => {
     if (matchedPortfolio) {
       console.log(
         chalk.green.bold(
-          "✅ Portfolio with identical parameters already exists!"
+          '✅ Portfolio with identical parameters already exists!'
         ),
-        "\n",
-        chalk.magenta("Parameters:"),
+        '\n',
+        chalk.magenta('Parameters:'),
         matchedPortfolio
       );
     } else {
       // Create the portfolio if not found
-      console.log(chalk.yellow.bold("\n🚀 Step 2: Create the portfolio"));
+      console.log(chalk.yellow.bold('\n🚀 Step 2: Create the portfolio'));
       const result = await createPortfolio(apiUrl, portfolio);
       if (result.status) {
         console.log(
-          chalk.green.bold("✅ Portfolio created successfully!"),
-          "\n",
-          chalk.magenta("Parameters:"),
+          chalk.green.bold('✅ Portfolio created successfully!'),
+          '\n',
+          chalk.magenta('Parameters:'),
           result.res
         );
       } else {
         console.error(
-          chalk.red.bold("❌ Failed to create portfolio:"),
+          chalk.red.bold('❌ Failed to create portfolio:'),
           result.error
         );
         return;
@@ -376,27 +327,27 @@ const main = async () => {
     }
 
     // Step 3: Activate the portfolio (whether it was newly created or already existed)
-    console.log(chalk.yellow.bold("\n⚡ Step 3: Activate the portfolio"));
+    console.log(chalk.yellow.bold('\n⚡ Step 3: Activate the portfolio'));
     const activationResult = await activatePortfolio(
       apiUrl,
       portfolio.portfolioId
     );
     if (activationResult.status) {
       console.log(
-        chalk.green.bold("✅ Portfolio activated successfully!"),
-        "\n",
-        chalk.magenta("Result:"),
+        chalk.green.bold('✅ Portfolio activated successfully!'),
+        '\n',
+        chalk.magenta('Result:'),
         activationResult.res
       );
     } else {
       console.error(
-        chalk.red.bold("❌ Failed to activate portfolio:"),
+        chalk.red.bold('❌ Failed to activate portfolio:'),
         activationResult.error
       );
     }
   } catch (error) {
     console.error(
-      chalk.red.bold("🔥 Error: Failed to create portfolio:"),
+      chalk.red.bold('🔥 Error: Failed to create portfolio:'),
       error.message
     );
     throw error;
