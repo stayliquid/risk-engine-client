@@ -296,6 +296,7 @@ const executeAll = async (allocations) => {
         status
       );
       summary[beefyId]["poolAction"] = poolActionRes.ok ? "success" : "failed";
+      await new Promise((res) => setTimeout(res, 5000)); // wait 5 second before next action to allow RPC to index the tx
     }
   }
 
