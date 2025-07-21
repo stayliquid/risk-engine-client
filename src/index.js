@@ -261,6 +261,7 @@ const executeAll = async (allocations) => {
       const errorMessage = `Execution failed at step ${stepNumber} (${payload.type} for ${beefyId})`;
       console.error(chalk.red.bold(`\n🔥 ${errorMessage}. Halting process.`));
       return { success: false, error: errorMessage };
+      await new Promise((res) => setTimeout(res, 5000)); // wait 5 second before next action to allow RPC to index the tx
     }
   }
 
