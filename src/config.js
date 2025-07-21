@@ -3,7 +3,7 @@ module.exports = {
   rpcUrl: process.env.RPC_URL || "https://arb1.arbitrum.io/rpc",
   portfolio: {
     portfolioId: process.env.PORTFOLIO_ID,
-    orgId: process.env.ORG_ID,
+    orgId: process.env.COMPANY_NAME,
     name: process.env.PORTFOLIO_NAME || "Main Portfolio",
     chainId: Number(process.env.CHAIN_ID) || 42161, // Arbitrum One
     maxRiskScore: parseFloat(process.env.MAX_RISK_SCORE) || 3.75,
