@@ -69,7 +69,7 @@ sudo chmod +x ./logs.sh
 7. **(after Stay Liquid linked your domain with your server IP)**
 
 ```bash
-curl http://<your-company-name>.risk-api.stayliquidweb.site/is-healthy # should return {"status":true}
+curl https://<your-company-name>.risk-api.stayliquidweb.site/is-healthy # should return {"status":true}
 ```
 
 You can now access your service at `http://your-droplet-ip:3000`
