@@ -78,7 +78,7 @@ You can now access your service at `http://your-droplet-ip:3000`
 
 ---
 
-## Sync with latest changes
+## 🔄 Sync with latest changes
 
 1. **Login to your server**
 
